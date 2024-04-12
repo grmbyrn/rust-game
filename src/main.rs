@@ -1,12 +1,12 @@
 use core::fmt;
-use std::io;
+use std::{collections::HashMap, io};
 
-use num_derive::FromPrimitive;
-use num_traits::FromPrimitive;
+use num_derive::{FromPrimitive, ToPrimitive};
+use num_traits::{FromPrimitive, ToPrimitive};
 
-#[derive(Debug, FromPrimitive)]
+#[derive(Debug, FromPrimitive, ToPrimitive, Eq, PartialEq, Hash)]
 enum Gem {
-    Diamond,
+    Diamond = 1,
     Sapphire,
     Ruby,
     Topaz,
@@ -41,6 +41,60 @@ impl fmt::Display for Gem {
 //     }
 // }
 
+fn game(map: &mut [[u8; 5]; 5]) -> Vec<Gem> {
+    let mut found: Vec<Gem> = Vec::new();
+
+    while found.len() < 5 {
+        println!("Search an X Y position 0-4 (example input: 5 3)");
+        let mut input = String::new();
+
+        match io::stdin().read_line(&mut input) {
+            Ok(_) => {}
+            Err(_) => {
+                println!("Failed to read line.")
+            }
+        };
+
+        let parts: Vec<&str> = input.trim().split_whitespace().collect();
+
+        if parts.len() != 2 {
+            println!("Two numbers required.");
+            continue;
+        }
+
+        let (x, y) = match (parts[0].parse::<u8>(), parts[1].parse::<u8>()) {
+            (Ok(x), Ok(y)) => (x, y),
+            _ => {
+                println!("Something is wrong with the input.");
+                continue;
+            }
+        };
+
+        if x >= 5 || y >= 5 {
+            println!("Invalid index");
+            continue;
+        }
+
+        let data = map[x as usize][y as usize];
+
+        let gem = match Gem::from_u8(data) {
+            Some(gem) => gem,
+            None => {
+                println!("No gem found at this position.");
+                continue;
+            }
+        };
+
+        // found.push(Gem::from_u8(data).expect("No gem found."));
+
+        found.push(gem);
+        map[x as usize][y as usize] = 0;
+
+        println!("{found:?}");
+    }
+    found
+}
+
 fn main() {
     // let gems = [
     //     (Gem::Onyx, 25.00),
@@ -54,7 +108,7 @@ fn main() {
     // }
 
     let mut map = [[0; 5]; 5];
-    println!("{map:?}");
+    // println!("{map:?}");
 
     map[4][2] = 1;
     map[1][2] = 2;
@@ -66,44 +120,22 @@ fn main() {
         println!("{row:?}")
     }
 
-    let found: Vec<Gem> = Vec::new();
+    let mut found: Vec<Gem> = game(&mut map);
 
-    println!("Search an X Y position (example input: 5 3)");
-    let mut input = String::new();
+    println!("You've found them all! Congrats!");
 
-    match io::stdin().read_line(&mut input) {
-        Ok(_) => {}
-        Err(_) => {
-            println!("Failed to read line.")
-        }
-    };
+    let mut gem_values: HashMap<Gem, f64> = HashMap::new();
+    gem_values.insert(Gem::Diamond, 1000.00);
+    gem_values.insert(Gem::Jade, 500.00);
+    gem_values.insert(Gem::Onyx, 300.00);
+    gem_values.insert(Gem::Ruby, 100.00);
+    gem_values.insert(Gem::Sapphire, 15.50);
+    gem_values.insert(Gem::Topaz, 9.99);
 
-    let parts: Vec<&str> = input.trim().split_whitespace().collect();
-
-    if parts.len() != 2 {
-        println!("Two numbers required.");
-        return;
+    let mut sum = 0.0;
+    for gem in found {
+        sum += gem_values[&gem];
     }
 
-    let (x, y) = match (parts[0].parse::<u8>(), parts[1].parse::<u8>()) {
-        (Ok(x), Ok(y)) => (x, y),
-        _ => {
-            println!("Something is wrong with the input.");
-            return;
-        }
-    };
-
-    let data = map[x as usize][y as usize];
-
-    let gem = match Gem::from_u8(data) {
-        Some(gem) => gem,
-        None => {
-            println!("No gem found at this position.");
-            return;
-        }
-    };
-
-    // found.push(Gem::from_u8(data).expect("No gem found."));
-
-    println!("{found:?}");
+    println!("The total Gem Value is: {}", sum);
 }
